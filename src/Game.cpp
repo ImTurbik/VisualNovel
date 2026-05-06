@@ -1,6 +1,8 @@
 #include "Game.hpp"
 #include <iostream>
 
+#include "TextureManager.hpp"
+
 bool Game::init(std::string title, int w, int h) {
     if (SDL_Init(SDL_INIT_VIDEO)) { 
         window_ = SDL_CreateWindow(title.c_str(), w, h, 0);
