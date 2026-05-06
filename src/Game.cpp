@@ -20,6 +20,11 @@ bool Game::init(std::string title, int w, int h) {
             return false;
         }
     }
+
+
+    TextureManager::Instance().load("images/map/map_ship.png", "deck", renderer_);
+    TextureManager::Instance().load("images/player/player_idle.png", "player", renderer_);
+
     
     startGame();
     return true;
@@ -42,10 +47,11 @@ void Game::handleEvents() {
 }
 
 void Game::render() {
-    SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
     SDL_RenderClear(renderer_);
 
-    // отрисовка sooooooon....
+    TextureManager::Instance().draw("deck", 0, 0, 1280, 720, renderer_);
+    TextureManager::Instance().draw("player", 400, 400, 128, 128, renderer_);
 
     SDL_RenderPresent(renderer_);
 }
