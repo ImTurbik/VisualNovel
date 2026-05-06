@@ -15,6 +15,13 @@ add_executable(VisualNovel
     src/Game.hpp
     src/TextureManager.cpp
     src/TextureManager.hpp
+    src/GameObject.cpp
+    src/GameObject.hpp
+    src/InputHandler.cpp
+    src/InputHandler.hpp
+    src/Player.cpp
+    src/Player.hpp
+    src/Vector2D.hpp
 )
 
 target_include_directories(VisualNovel PRIVATE src)

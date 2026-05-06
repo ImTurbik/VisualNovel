@@ -2,6 +2,8 @@
 #include <iostream>
 
 #include "TextureManager.hpp"
+#include "InputHandler.hpp"
+#include "Player.hpp"
 
 bool Game::init(std::string title, int w, int h) {
     if (SDL_Init(SDL_INIT_VIDEO)) { 
@@ -25,6 +27,8 @@ bool Game::init(std::string title, int w, int h) {
     TextureManager::Instance().load("images/map/map_ship.png", "deck", renderer_);
     TextureManager::Instance().load("images/player/player_idle.png", "player", renderer_);
 
+    player.load("player", 400, 400, 128, 128);
+
     
     startGame();
     return true;
@@ -33,16 +37,11 @@ bool Game::init(std::string title, int w, int h) {
 void Game::handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_EVENT_QUIT:
-                stopGame();
-                break;
-            case SDL_EVENT_KEY_DOWN:
-                // InputHandler::Instance()->handle(event);
-                break;
-            default:
-                break;
+        if (event.type == SDL_EVENT_QUIT) {
+            stopGame();
         }
+
+        InputHandler::Instance()->handle(event);
     }
 }
 
@@ -51,12 +50,14 @@ void Game::render() {
     SDL_RenderClear(renderer_);
 
     TextureManager::Instance().draw("deck", 0, 0, 1280, 720, renderer_);
-    TextureManager::Instance().draw("player", 400, 400, 128, 128, renderer_);
+    // TextureManager::Instance().draw("player", 400, 400, 128, 128, renderer_);
+    player.draw(renderer_);
 
     SDL_RenderPresent(renderer_);
 }
 
 void Game::update() {
+    player.update();
 }
 
 void Game::clean() {
