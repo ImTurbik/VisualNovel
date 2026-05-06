@@ -25,9 +25,12 @@ bool Game::init(std::string title, int w, int h) {
 
 
     TextureManager::Instance().load("images/map/map_ship.png", "deck", renderer_);
-    TextureManager::Instance().load("images/player/player_idle.png", "player", renderer_);
+    
+    TextureManager::Instance().load("images/player/player_idle.png", "player_idle", renderer_);
+    TextureManager::Instance().load("images/player/player_step1.png", "player_step1", renderer_);
+    TextureManager::Instance().load("images/player/player_step2.png", "player_step2", renderer_);
 
-    player.load("player", 400, 400, 128, 128);
+    player.load("player_idle", 400, 400, 128, 128);
 
     
     startGame();
