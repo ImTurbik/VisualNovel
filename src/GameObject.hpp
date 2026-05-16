@@ -16,4 +16,7 @@ public:
     virtual void draw(SDL_Renderer* renderer);
     virtual void update();
     virtual void clean();
+
+    SDL_FRect getBounds() const;
+    std::string getTextureTag() const;
 };

@@ -24,6 +24,8 @@ add_executable(VisualNovel
     src/Vector2D.hpp
     src/Npc.cpp
     src/Npc.hpp
+    src/Collider.cpp
+    src/Collider.hpp
 )
 
 target_include_directories(VisualNovel PRIVATE src)

@@ -1,7 +1,9 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include <string>
+#include <vector>
 
+#include "Collider.hpp"
 #include "Player.hpp"
 #include "Npc.hpp"
 
@@ -26,6 +28,8 @@ public:
     Npc princess;
     Npc greybeard;
     Npc cabinBoy;
+
+    std::vector<Collider> mapColliders;
 
 private:
     bool running_ = false;
