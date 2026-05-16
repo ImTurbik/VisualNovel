@@ -39,8 +39,8 @@ bool Game::init(std::string title, int w, int h) {
     player.load("player_idle", 400, 400, 128, 128);
 
     captain.load("captain_texture", 800, 320, 128, 128);
-    princess.load("princess_texture", 400, 400, 128, 128);
-    greybeard.load("greybeard_texture", 800, 100, 128, 128);
+    princess.load("princess_texture", 550, 80, 128, 128);
+    greybeard.load("greybeard_texture", 800, 120, 128, 128);
     cabinBoy.load("cabinBoy_texture", 320, 100, 128, 128);
     
     startGame();
