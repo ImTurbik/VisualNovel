@@ -30,8 +30,18 @@ bool Game::init(std::string title, int w, int h) {
     TextureManager::Instance().load("images/player/player_step1.png", "player_step1", renderer_);
     TextureManager::Instance().load("images/player/player_step2.png", "player_step2", renderer_);
 
+    // princess greybeard captain cabinBoy
+    TextureManager::Instance().load("images/npc/captain.png", "captain_texture", renderer_);
+    TextureManager::Instance().load("images/npc/princess.png", "princess_texture", renderer_);
+    TextureManager::Instance().load("images/npc/greybeard.png", "greybeard_texture", renderer_);
+    TextureManager::Instance().load("images/npc/cabinBoy.png", "cabinBoy_texture", renderer_);
+
     player.load("player_idle", 400, 400, 128, 128);
 
+    captain.load("captain_texture", 800, 320, 128, 128);
+    princess.load("princess_texture", 400, 400, 128, 128);
+    greybeard.load("greybeard_texture", 800, 100, 128, 128);
+    cabinBoy.load("cabinBoy_texture", 320, 100, 128, 128);
     
     startGame();
     return true;
@@ -54,6 +64,12 @@ void Game::render() {
 
     TextureManager::Instance().draw("deck", 0, 0, 1280, 720, renderer_);
     // TextureManager::Instance().draw("player", 400, 400, 128, 128, renderer_);
+    
+    captain.draw(renderer_);
+    princess.draw(renderer_);
+    greybeard.draw(renderer_);
+    cabinBoy.draw(renderer_);
+
     player.draw(renderer_);
 
     SDL_RenderPresent(renderer_);
@@ -61,6 +77,10 @@ void Game::render() {
 
 void Game::update() {
     player.update();
+    captain.update();
+    princess.update();
+    greybeard.update();
+    cabinBoy.update();
 }
 
 void Game::clean() {

@@ -22,6 +22,8 @@ add_executable(VisualNovel
     src/Player.cpp
     src/Player.hpp
     src/Vector2D.hpp
+    src/Npc.cpp
+    src/Npc.hpp
 )
 
 target_include_directories(VisualNovel PRIVATE src)

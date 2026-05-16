@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Player.hpp"
+#include "Npc.hpp"
 
 class Game {
 public:
@@ -19,6 +20,12 @@ public:
     bool isRunning() { return running_; }
 
     Player player;
+
+    // princess greybeard captain cabinBoy
+    Npc captain;
+    Npc princess;
+    Npc greybeard;
+    Npc cabinBoy;
 
 private:
     bool running_ = false;
