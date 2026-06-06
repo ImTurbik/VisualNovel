@@ -59,6 +59,15 @@ bool Game::init(std::string title, int w, int h) {
     mapColliders.push_back(Collider(250, 420, 180, 130));  // якорь под мачтой
     mapColliders.push_back(Collider(655, 420, 180, 140));  // бочки
 
+    // загрузка портретов для системы диалогов
+    TextureManager::Instance().load("images/portraits/captain_neutral.png", "captain_portrait", renderer_);
+    TextureManager::Instance().load("images/portraits/princess_neutral.png", "princess_portrait", renderer_);
+    TextureManager::Instance().load("images/portraits/greybeard_neutral.png", "greybeard_portrait", renderer_);
+    TextureManager::Instance().load("images/portraits/cabinBoy_neutral.png", "cabinBoy_portrait", renderer_);
+
+    inDialogue_ = false;
+    currentPortrait_ = "";
+
 
     startGame();
     return true;
@@ -71,9 +80,42 @@ void Game::handleEvents() {
             stopGame();
         }
 
+        // проверяем клик левой кнопки мыши
+        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_LEFT) {
+            if (inDialogue_) {
+                // если диалог уже открыт - закрываем его любым следующим кликом
+                inDialogue_ = false;
+                currentPortrait_ = "";
+            } else {
+                // если мы просто ходим - проверяем, попал ли клик по NPC
+                float mx = event.button.x;
+                float my = event.button.y;
+
+                auto cap = captain.getBounds();
+                auto prin = princess.getBounds();
+                auto grey = greybeard.getBounds();
+                auto boy = cabinBoy.getBounds();
+
+                // условия попадания курсора мыши в рамки хитбоксов персонажей
+                if (mx >= cap.x && mx <= cap.x + cap.w && my >= cap.y && my <= cap.y + cap.h) {
+                    inDialogue_ = true; currentPortrait_ = "captain_portrait";
+                }
+                else if (mx >= prin.x && mx <= prin.x + prin.w && my >= prin.y && my <= prin.y + prin.h) {
+                    inDialogue_ = true; currentPortrait_ = "princess_portrait";
+                }
+                else if (mx >= grey.x && mx <= grey.x + grey.w && my >= grey.y && my <= grey.y + grey.h) {
+                    inDialogue_ = true; currentPortrait_ = "greybeard_portrait";
+                }
+                else if (mx >= boy.x && mx <= boy.x + boy.w && my >= boy.y && my <= boy.y + boy.h) {
+                    inDialogue_ = true; currentPortrait_ = "cabinBoy_portrait";
+                }
+            }
+        }
+
         InputHandler::Instance()->handle(event);
     }
 }
+
 
 void Game::render() {
 
@@ -95,11 +137,35 @@ void Game::render() {
     //     wall.drawDebug(renderer_);
     // }
 
+
+    // если идёт диалог - рисуем интерфейс поверх всего
+    if (inDialogue_ && currentPortrait_ != "") {
+        SDL_FRect blackScreen = {0, 0, 1280, 720};
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 140);
+        SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+        SDL_RenderFillRect(renderer_, &blackScreen);
+
+        TextureManager::Instance().draw(currentPortrait_, 830, 120, 450, 600, renderer_);
+
+        SDL_FRect box = {50, 580, 1180, 100};
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 200);
+        SDL_RenderFillRect(renderer_, &box);
+
+        SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+        SDL_RenderRect(renderer_, &box);
+    }
+
+
     SDL_RenderPresent(renderer_);
 }
 
 void Game::update() {
-    // 1. Обновляем всех NPC
+    // если открыт диалог - полностью выходим из метода, замораживая физику игрока
+    if (inDialogue_) {
+        return;
+    }
+
+    // обновляем всех NPC
     captain.update();
     princess.update();
     greybeard.update();

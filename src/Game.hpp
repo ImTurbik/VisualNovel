@@ -33,6 +33,9 @@ public:
 
 private:
     bool running_ = false;
+    bool inDialogue_ = false;
+    std::string currentPortrait_ = "";
+
     SDL_Window* window_;
     SDL_Renderer* renderer_;
 };
