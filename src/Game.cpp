@@ -65,9 +65,23 @@ bool Game::init(std::string title, int w, int h) {
     TextureManager::Instance().load("images/portraits/greybeard_neutral.png", "greybeard_portrait", renderer_);
     TextureManager::Instance().load("images/portraits/cabinBoy_neutral.png", "cabinBoy_portrait", renderer_);
 
+    if (!TTF_Init()) {
+        std::cerr << "TTF Init Error" << std::endl;
+        return false;
+    }
+
+    // загружаем шрифт
+    font_ = TTF_OpenFont("fonts/arial.ttf", 20);
+    if (font_ == nullptr) {
+        std::cerr << "Font Load Error" << std::endl;
+        return false;
+    }
+
     inDialogue_ = false;
     currentPortrait_ = "";
+    dialogueStep_ = 0;
 
+    buildDialogueDatabase();
 
     startGame();
     return true;
@@ -80,34 +94,46 @@ void Game::handleEvents() {
             stopGame();
         }
 
-        // проверяем клик левой кнопки мыши
+        // если диалог идет - ловим нажатия цифр (1, 2, 3) для выбора веток
+        if (inDialogue_ && event.type == SDL_EVENT_KEY_DOWN) {
+            DialogueNode* current = nullptr;
+            for (auto& node : dialogueDatabase_) {
+                if (node.id == currentDialogueNodeId_) { current = &node; break; }
+            }
+
+            if (current != nullptr && !current->choices.empty()) {
+                if (event.key.scancode == SDL_SCANCODE_1) currentDialogueNodeId_ = current->choices[0].nextNodeId;
+                else if (event.key.scancode == SDL_SCANCODE_2) currentDialogueNodeId_ = current->choices[1].nextNodeId;
+                else if (event.key.scancode == SDL_SCANCODE_3) currentDialogueNodeId_ = current->choices[2].nextNodeId;
+            }
+        }
+
+        // ловим клик мышки
         if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_LEFT) {
             if (inDialogue_) {
-                // если диалог уже открыт - закрываем его любым следующим кликом
-                inDialogue_ = false;
-                currentPortrait_ = "";
-            } else {
-                // если мы просто ходим - проверяем, попал ли клик по NPC
-                float mx = event.button.x;
-                float my = event.button.y;
+                DialogueNode* current = nullptr;
+                for (auto& node : dialogueDatabase_) {
+                    if (node.id == currentDialogueNodeId_) { current = &node; break; }
+                }
 
-                auto cap = captain.getBounds();
-                auto prin = princess.getBounds();
-                auto grey = greybeard.getBounds();
+                if (current != nullptr && current->choices.empty()) {
+                    // если развилок нет, обычный клик двигает сюжет к следующему узлу
+                    currentDialogueNodeId_ = current->nextNodeId;
+
+                    if (currentDialogueNodeId_ == -1) {
+                        inDialogue_ = false;
+                        currentPortrait_ = "";
+                    }
+                }
+            } else {
+                // открытие диалога при клике на Юнгу
+                float mx = event.button.x; float my = event.button.y;
                 auto boy = cabinBoy.getBounds();
 
-                // условия попадания курсора мыши в рамки хитбоксов персонажей
-                if (mx >= cap.x && mx <= cap.x + cap.w && my >= cap.y && my <= cap.y + cap.h) {
-                    inDialogue_ = true; currentPortrait_ = "captain_portrait";
-                }
-                else if (mx >= prin.x && mx <= prin.x + prin.w && my >= prin.y && my <= prin.y + prin.h) {
-                    inDialogue_ = true; currentPortrait_ = "princess_portrait";
-                }
-                else if (mx >= grey.x && mx <= grey.x + grey.w && my >= grey.y && my <= grey.y + grey.h) {
-                    inDialogue_ = true; currentPortrait_ = "greybeard_portrait";
-                }
-                else if (mx >= boy.x && mx <= boy.x + boy.w && my >= boy.y && my <= boy.y + boy.h) {
-                    inDialogue_ = true; currentPortrait_ = "cabinBoy_portrait";
+                if (mx >= boy.x && mx <= boy.x + boy.w && my >= boy.y && my <= boy.y + boy.h) {
+                    inDialogue_ = true;
+                    currentPortrait_ = "cabinBoy_portrait";
+                    currentDialogueNodeId_ = 0;
                 }
             }
         }
@@ -147,12 +173,37 @@ void Game::render() {
 
         TextureManager::Instance().draw(currentPortrait_, 830, 120, 450, 600, renderer_);
 
-        SDL_FRect box = {50, 580, 1180, 100};
+        SDL_FRect box = {50, 580, 1180, 130};
         SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 200);
         SDL_RenderFillRect(renderer_, &box);
 
         SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
         SDL_RenderRect(renderer_, &box);
+
+        DialogueNode* current = nullptr;
+        for (auto& node : dialogueDatabase_) {
+            if (node.id == currentDialogueNodeId_) { 
+                current = &node; 
+                break; 
+            }
+        }
+
+        if (current != nullptr) {
+            SDL_Color white = { 255, 255, 255, 255 };
+            SDL_Color yellow = { 255, 255, 0, 255 };
+
+            drawText(current->npcName + ":", 70, 585, yellow);
+
+            if (!current->choices.empty()) {
+                float currentY = 610;
+                for (const auto& choice : current->choices) {
+                    drawText(choice.text, 70, currentY, white);
+                    currentY += 24;
+                }
+            } else {
+                drawText(current->text, 70, 615, white);
+            }
+        }
     }
 
 
@@ -214,4 +265,66 @@ void Game::clean() {
         SDL_DestroyWindow(window_);
     }
     SDL_Quit();
+}
+
+void Game::buildDialogueDatabase() {
+    dialogueDatabase_.clear();
+
+    // узел 0: стартовый вопрос Марко и развилка
+    DialogueNode node0;
+    node0.id = 0;
+    node0.npcName = "Марко";
+    node0.text = "Здрасьте, сир. Так вы и в самом деле не человек?";
+    node0.choices.push_back(DialogueChoice{"1. Отшутиться", 1});
+    node0.choices.push_back(DialogueChoice{"2. Приструнить", 2});
+    node0.choices.push_back(DialogueChoice{"3. Ответить спокойно", 3});
+    node0.nextNodeId = -1;
+    dialogueDatabase_.push_back(node0);
+
+    // узел 1: ответ "Отшутиться"
+    DialogueNode node1;
+    node1.id = 1;
+    node1.npcName = "Имотэс";
+    node1.text = "«Меня выдали уши?» — ты улыбнулся. Марко рассмеялся в ответ.";
+    node1.nextNodeId = 4; // переход на финальную реплику
+    dialogueDatabase_.push_back(node1);
+
+    // узел 2: ответ "Приструнить"
+    DialogueNode node2;
+    node2.id = 2;
+    node2.npcName = "Имотэс";
+    node2.text = "«Следи за языком перед власть имущими» — холодно отрезал ты.";
+    node2.nextNodeId = 4;
+    dialogueDatabase_.push_back(node2);
+
+    // узел 3: ответ "Спокойно ответить"
+    DialogueNode node3;
+    node3.id = 3;
+    node3.npcName = "Имотэс";
+    node3.text = "«Человек. Разве что не обычный» — буднично ответил ты.";
+    node3.nextNodeId = 4;
+    dialogueDatabase_.push_back(node3);
+
+    // узел 4: финал сцены знакомства
+    DialogueNode node4;
+    node4.id = 4;
+    node4.npcName = "Марко";
+    node4.text = "Меня Марко звать. Юнгой тут служу. Чего обсудить хотели, сир?";
+    node4.nextNodeId = -1; // конец диалога
+    dialogueDatabase_.push_back(node4);
+}
+
+void Game::drawText(const std::string& text, float x, float y, SDL_Color color) {
+    if (font_ == nullptr || text.empty()) return;
+
+    SDL_Surface* surface = TTF_RenderText_Blended(font_, text.c_str(), 0, color);
+    if (surface != nullptr) {
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, surface);
+        if (texture != nullptr) {
+            SDL_FRect dstRect = { x, y, (float)surface->w, (float)surface->h };
+            SDL_RenderTexture(renderer_, texture, NULL, &dstRect);
+            SDL_DestroyTexture(texture);
+        }
+        SDL_DestroySurface(surface);
+    }
 }

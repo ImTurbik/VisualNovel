@@ -5,9 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(SDL3_DIR "${CMAKE_CURRENT_SOURCE_DIR}/SDL/cmake")
 set(SDL3_image_DIR "${CMAKE_CURRENT_SOURCE_DIR}/SDL_image/cmake")
+set(SDL3_ttf_DIR "${CMAKE_CURRENT_SOURCE_DIR}/SDL_ttf/cmake")
 
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
+find_package(SDL3_ttf REQUIRED)
 
 add_executable(VisualNovel
     src/main.cpp
@@ -26,14 +28,16 @@ add_executable(VisualNovel
     src/Npc.hpp
     src/Collider.cpp
     src/Collider.hpp
+    src/DialogueSystem.hpp
 )
 
 target_include_directories(VisualNovel PRIVATE src)
 
-target_link_libraries(VisualNovel PRIVATE SDL3::SDL3 SDL3_image::SDL3_image)
+target_link_libraries(VisualNovel PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf)
 
 add_custom_command(TARGET VisualNovel POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_CURRENT_SOURCE_DIR}/SDL/lib/x64/SDL3.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/SDL_image/lib/x64/SDL3_image.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/SDL_ttf/lib/x64/SDL3_ttf.dll"
     $<TARGET_FILE_DIR:VisualNovel>)
