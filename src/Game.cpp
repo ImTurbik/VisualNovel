@@ -81,6 +81,9 @@ bool Game::init(std::string title, int w, int h) {
     currentPortrait_ = "";
     dialogueStep_ = 0;
 
+    showIntro_ = true;
+    introStep_ = 0;
+
     buildDialogueDatabase();
 
     startGame();
@@ -120,6 +123,15 @@ void Game::handleEvents() {
                         currentPortrait_ = "";
                         std::cout << "Dialogue ended by choice" << std::endl;
                     }
+                }
+            }
+        }
+
+        if (showIntro_ && !inDialogue_ && event.type == SDL_EVENT_KEY_DOWN) {
+            if (event.key.scancode == SDL_SCANCODE_SPACE) {
+                introStep_++;
+                if (introStep_ >= 4) {
+                    showIntro_ = false;
                 }
             }
         }
@@ -204,6 +216,41 @@ void Game::render() {
     SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
     SDL_RenderClear(renderer_);
 
+    if (showIntro_) {
+        SDL_FRect blackScreen = {0, 0, 1280, 720};
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 240);
+        SDL_RenderFillRect(renderer_, &blackScreen);
+
+        SDL_Color white = {255, 255, 255, 255};
+        SDL_Color yellow = {255, 255, 0, 255};
+
+        if (introStep_ == 0) {
+            drawText("Каюта", 150, 150, yellow);
+            drawText("Яркий свет... Резкий толчок почти сваливает тебя с кровати.", 100, 220, white);
+            drawText("Ты в каюте корабля. Голова болит. Пора выходить на палубу.", 100, 270, white);
+            drawText("Нажми SPACE чтобы продолжить...", 100, 400, white);
+        } 
+        else if (introStep_ == 1) {
+            drawText("Ты привёл себя в порядок, принял лекарство и оделся.", 100, 220, white);
+            drawText("В дверь постучали: «Эй, мистер посол, вас на палубе заждались!»", 100, 270, white);
+        } 
+        else if (introStep_ == 2) {
+            drawText("Ты поднимаешься на палубу.", 100, 220, white);
+            drawText("Яркий дневной свет бьёт в глаза. Солёный ветер хлещет по лицу.", 100, 270, white);
+        } 
+        else if (introStep_ == 3) {
+            drawText("На палубе тебя ждёт команда:", 100, 200, yellow);
+            drawText("• Марко (юнга)", 150, 260, white);
+            drawText("• Капитан Себастьян", 150, 290, white);
+            drawText("• Принцесса", 150, 320, white);
+            drawText("• Барнабас Грей", 150, 350, white);
+            drawText("Кликай на них мышкой. Нажми SPACE чтобы начать игру...", 100, 420, white);
+        }
+
+        SDL_RenderPresent(renderer_);
+        return;
+    }
+
     TextureManager::Instance().draw("deck", 0, 0, 1280, 720, renderer_);
     // TextureManager::Instance().draw("player", 400, 400, 128, 128, renderer_);
     
@@ -267,6 +314,10 @@ void Game::render() {
 }
 
 void Game::update() {
+    if (showIntro_) {
+        return;
+    }
+
     // если открыт диалог - полностью выходим из метода, замораживая физику игрока
     if (inDialogue_) {
         return;
