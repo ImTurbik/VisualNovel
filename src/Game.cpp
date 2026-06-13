@@ -94,17 +94,33 @@ void Game::handleEvents() {
             stopGame();
         }
 
-        // если диалог идет - ловим нажатия цифр (1, 2, 3) для выбора веток
+        // если диалог идет - ловим нажатия цифр для выбора веток
         if (inDialogue_ && event.type == SDL_EVENT_KEY_DOWN) {
             DialogueNode* current = nullptr;
             for (auto& node : dialogueDatabase_) {
-                if (node.id == currentDialogueNodeId_) { current = &node; break; }
+                if (node.id == currentDialogueNodeId_) { 
+                    current = &node; 
+                    break; 
+                }
             }
 
             if (current != nullptr && !current->choices.empty()) {
-                if (event.key.scancode == SDL_SCANCODE_1) currentDialogueNodeId_ = current->choices[0].nextNodeId;
-                else if (event.key.scancode == SDL_SCANCODE_2) currentDialogueNodeId_ = current->choices[1].nextNodeId;
-                else if (event.key.scancode == SDL_SCANCODE_3) currentDialogueNodeId_ = current->choices[2].nextNodeId;
+                int choiceIndex = -1;
+                if (event.key.scancode == SDL_SCANCODE_1) choiceIndex = 0;
+                else if (event.key.scancode == SDL_SCANCODE_2) choiceIndex = 1;
+                else if (event.key.scancode == SDL_SCANCODE_3) choiceIndex = 2;
+                else if (event.key.scancode == SDL_SCANCODE_4) choiceIndex = 3;
+
+                if (choiceIndex >= 0 && choiceIndex < (int)current->choices.size()) {
+                    currentDialogueNodeId_ = current->choices[choiceIndex].nextNodeId;
+                    
+                    // Если nextNodeId == -1 — выходим из диалога
+                    if (currentDialogueNodeId_ == -1) {
+                        inDialogue_ = false;
+                        currentPortrait_ = "";
+                        std::cout << "Dialogue ended by choice" << std::endl;
+                    }
+                }
             }
         }
 
@@ -113,27 +129,67 @@ void Game::handleEvents() {
             if (inDialogue_) {
                 DialogueNode* current = nullptr;
                 for (auto& node : dialogueDatabase_) {
-                    if (node.id == currentDialogueNodeId_) { current = &node; break; }
-                }
-
-                if (current != nullptr && current->choices.empty()) {
-                    // если развилок нет, обычный клик двигает сюжет к следующему узлу
-                    currentDialogueNodeId_ = current->nextNodeId;
-
-                    if (currentDialogueNodeId_ == -1) {
-                        inDialogue_ = false;
-                        currentPortrait_ = "";
+                    if (node.id == currentDialogueNodeId_) { 
+                        current = &node; 
+                        break; 
                     }
                 }
-            } else {
-                // открытие диалога при клике на Юнгу
-                float mx = event.button.x; float my = event.button.y;
-                auto boy = cabinBoy.getBounds();
 
+                if (current != nullptr) {
+                    if (current->choices.empty()) {
+                        // обычный клик — следующий узел
+                        currentDialogueNodeId_ = current->nextNodeId;
+                        if (currentDialogueNodeId_ == -1) {
+                            inDialogue_ = false;
+                            currentPortrait_ = "";
+                        }
+                    }
+                    // если есть выборы — ничего не делаем (ждём нажатия 1,2,3)
+                }
+            } 
+            else {
+                // === КЛИК ПО NPC НА ПАЛУБЕ ===
+                float mx = event.button.x; 
+                float my = event.button.y;
+                
+                // Юнга Марко (cabinBoy)
+                auto boy = cabinBoy.getBounds();
                 if (mx >= boy.x && mx <= boy.x + boy.w && my >= boy.y && my <= boy.y + boy.h) {
                     inDialogue_ = true;
                     currentPortrait_ = "cabinBoy_portrait";
                     currentDialogueNodeId_ = 0;
+                    std::cout << "Dialogue with Marco started" << std::endl;
+                    return;
+                }
+
+                // Капитан
+                auto cap = captain.getBounds();
+                if (mx >= cap.x && mx <= cap.x + cap.w && my >= cap.y && my <= cap.y + cap.h) {
+                    inDialogue_ = true;
+                    currentPortrait_ = "captain_portrait";
+                    currentDialogueNodeId_ = 10;
+                    std::cout << "Dialogue with Captain started" << std::endl;
+                    return;
+                }
+
+                // Принцесса
+                auto prin = princess.getBounds();
+                if (mx >= prin.x && mx <= prin.x + prin.w && my >= prin.y && my <= prin.y + prin.h) {
+                    inDialogue_ = true;
+                    currentPortrait_ = "princess_portrait";
+                    currentDialogueNodeId_ = 20;
+                    std::cout << "Dialogue with Princess started" << std::endl;
+                    return;
+                }
+
+                // Барнабас Грей (greybeard)
+                auto beard = greybeard.getBounds();
+                if (mx >= beard.x && mx <= beard.x + beard.w && my >= beard.y && my <= beard.y + beard.h) {
+                    inDialogue_ = true;
+                    currentPortrait_ = "greybeard_portrait";
+                    currentDialogueNodeId_ = 30;
+                    std::cout << "Dialogue with Greybeard started" << std::endl;
+                    return;
                 }
             }
         }
@@ -270,48 +326,116 @@ void Game::clean() {
 void Game::buildDialogueDatabase() {
     dialogueDatabase_.clear();
 
-    // узел 0: стартовый вопрос Марко и развилка
+    // ДИАЛОГ С МАРКО: ID 0-9
     DialogueNode node0;
     node0.id = 0;
     node0.npcName = "Марко";
-    node0.text = "Здрасьте, сир. Так вы и в самом деле не человек?";
-    node0.choices.push_back(DialogueChoice{"1. Отшутиться", 1});
-    node0.choices.push_back(DialogueChoice{"2. Приструнить", 2});
-    node0.choices.push_back(DialogueChoice{"3. Ответить спокойно", 3});
-    node0.nextNodeId = -1;
+    node0.text = "Здрасьте, достопочтенный сир. — Так вы, м-м…и в самом деле не человек?";
+    node0.choices.clear();
+    node0.nextNodeId = 5;
     dialogueDatabase_.push_back(node0);
 
-    // узел 1: ответ "Отшутиться"
-    DialogueNode node1;
-    node1.id = 1;
-    node1.npcName = "Имотэс";
-    node1.text = "«Меня выдали уши?» — ты улыбнулся. Марко рассмеялся в ответ.";
-    node1.nextNodeId = 4; // переход на финальную реплику
-    dialogueDatabase_.push_back(node1);
+    DialogueNode node5;
+    node5.id = 5;
+    node5.npcName = "Марко";
+    node5.text = "";  
+    node5.choices.push_back(DialogueChoice{"1. Отшутиться", 1});
+    node5.choices.push_back(DialogueChoice{"2. Приструнить", 2});
+    node5.choices.push_back(DialogueChoice{"3. Спокойно ответить", 3});
+    node5.nextNodeId = -1;
+    dialogueDatabase_.push_back(node5);
 
-    // узел 2: ответ "Приструнить"
-    DialogueNode node2;
-    node2.id = 2;
-    node2.npcName = "Имотэс";
-    node2.text = "«Следи за языком перед власть имущими» — холодно отрезал ты.";
-    node2.nextNodeId = 4;
-    dialogueDatabase_.push_back(node2);
+    // Реакции игрока
+    DialogueNode node1; node1.id = 1; node1.npcName = "Имотэс"; 
+    node1.text = "«Меня выдали уши?» — произносишь ты, не в силах сдержать смешок удивления."; 
+    node1.nextNodeId = 4; dialogueDatabase_.push_back(node1);
 
-    // узел 3: ответ "Спокойно ответить"
-    DialogueNode node3;
-    node3.id = 3;
-    node3.npcName = "Имотэс";
-    node3.text = "«Человек. Разве что не обычный» — буднично ответил ты.";
-    node3.nextNodeId = 4;
-    dialogueDatabase_.push_back(node3);
+    DialogueNode node2; node2.id = 2; node2.npcName = "Имотэс"; 
+    node2.text = "«Следи за языком в присутствии власть имущих» — холодно отрезаешь ты."; 
+    node2.nextNodeId = 4; dialogueDatabase_.push_back(node2);
 
-    // узел 4: финал сцены знакомства
+    DialogueNode node3; node3.id = 3; node3.npcName = "Имотэс"; 
+    node3.text = "«Человек, человек. Разве что не обычный.» — буднично отвечаешь ты пожав плечами."; 
+    node3.nextNodeId = 4; dialogueDatabase_.push_back(node3);
+
+    // Финальная реплика Марко
     DialogueNode node4;
     node4.id = 4;
     node4.npcName = "Марко";
-    node4.text = "Меня Марко звать. Юнгой тут служу. Чего обсудить хотели, сир?";
-    node4.nextNodeId = -1; // конец диалога
+    node4.text = "Меня Марко звать. Юнгой тут пока являюсь… пока. — он заговорщически подмигнул тебе.";
+    node4.nextNodeId = -1;
     dialogueDatabase_.push_back(node4);
+
+    // ДИАЛОГ С КАПИТАНОМ: ID 10-19
+    DialogueNode node10;
+    node10.id = 10;
+    node10.npcName = "Себастьян";
+    node10.text = "А, наш дорогой гость! Решили подышать свежим морским воздухом, или всё же снизошли до общения с простым людом?";
+    node10.choices.push_back(DialogueChoice{"1. Расскажете о себе?", 11});
+    node10.choices.push_back(DialogueChoice{"2. Что мне следует знать о вашем экипаже?", 12});
+    node10.choices.push_back(DialogueChoice{"3. Что вы знаете о нашей миссии?", 13});
+    node10.choices.push_back(DialogueChoice{"4. Уйти", -1});
+    dialogueDatabase_.push_back(node10);
+
+    DialogueNode node11; node11.id = 11; node11.npcName = "Себастьян"; 
+    node11.text = "Зовут Джон Сильвер. Ха-ха!.. Нет, конечно же нет. Я — капитан Вандервуд. Для вас могу побыть и просто Себастьяном."; 
+    node11.nextNodeId = 10; dialogueDatabase_.push_back(node11);
+
+    DialogueNode node12; node12.id = 12; node12.npcName = "Себастьян"; 
+    node12.text = "Экипаж мал: юнга Марко, Морская Принцесса, старый Барнабас Грей. Будьте аккуратнее."; 
+    node12.nextNodeId = 10; dialogueDatabase_.push_back(node12);
+
+    DialogueNode node13; node13.id = 13; node13.npcName = "Себастьян"; 
+    node13.text = "От меня зависит, чтобы вы добрались до Скрытых Земель целым. Подробностей я лишён."; 
+    node13.nextNodeId = 10; dialogueDatabase_.push_back(node13);
+
+    // ДИАЛОГ С ПРИНЦЕССОЙ: ID 20-29
+    DialogueNode node20;
+    node20.id = 20;
+    node20.npcName = "Принцесса";
+    node20.text = "Ну и что понадобилось столь августейшей особе в моей скромной компании?";
+    node20.choices.push_back(DialogueChoice{"1. Не знал, что в плавание берут женщин.", 21});
+    node20.choices.push_back(DialogueChoice{"2. Если ты член экипажа, вероятно, обладаешь навыками?", 22});
+    node20.choices.push_back(DialogueChoice{"3. Просто осматриваюсь.", 23});
+    node20.choices.push_back(DialogueChoice{"4. Уйти", -1});
+    dialogueDatabase_.push_back(node20);
+
+    DialogueNode node21; node21.id = 21; node21.npcName = "Принцесса"; 
+    node21.text = "Ну конечно, женщины на корабле — к беде? В такие стереотипы верят только сухопутные."; 
+    node21.nextNodeId = -1; dialogueDatabase_.push_back(node21);
+
+    DialogueNode node22; node22.id = 22; node22.npcName = "Принцесса"; 
+    node22.text = "В море важны только навыки. Раз вас отправили — у вас их тоже хватает."; 
+    node22.nextNodeId = -1; dialogueDatabase_.push_back(node22);
+
+    DialogueNode node23; node23.id = 23; node23.npcName = "Принцесса"; 
+    node23.text = "На борту есть более интересный собеседник — Барнабас со своими байками."; 
+    node23.nextNodeId = -1; dialogueDatabase_.push_back(node23);
+
+    // ДИАЛОГ С БАРНАБАСОМ ГРЕЕМ: ID 30-39
+    DialogueNode node30;
+    node30.id = 30;
+    node30.npcName = "Барнабас";
+    node30.text = "Вы, значится, нашенская важнецкая персона?";
+    node30.choices.push_back(DialogueChoice{"1. Кажется, у вас больше всего опыта.", 31});
+    node30.choices.push_back(DialogueChoice{"2. Как зовут вашу птицу?", 32});
+    node30.choices.push_back(DialogueChoice{"3. Расскажите интересную историю.", 33});
+    node30.choices.push_back(DialogueChoice{"4. Уйти", -1});
+    dialogueDatabase_.push_back(node30);
+
+    DialogueNode node31; node31.id = 31; node31.npcName = "Барнабас"; 
+    node31.text = "Когда-то я запрыгнул зайцем на корабль... Сейчас мне уже за семьдесят!"; 
+    node31.nextNodeId = 30; dialogueDatabase_.push_back(node31);
+
+    DialogueNode node32; node32.id = 32; node32.npcName = "Барнабас"; 
+    node32.text = "Птицу зовут Крекер. История долгая — в порту Альба-Секка..."; 
+    node32.nextNodeId = 30; dialogueDatabase_.push_back(node32);
+
+    DialogueNode node33; node33.id = 33; node33.npcName = "Барнабас"; 
+    node33.text = "Поверье про утопленников с монетой... Клянусь своим глазом!"; 
+    node33.nextNodeId = 30; dialogueDatabase_.push_back(node33);
+
+    std::cout << "Dialogue database built with " << dialogueDatabase_.size() << " nodes." << std::endl;
 }
 
 void Game::drawText(const std::string& text, float x, float y, SDL_Color color) {

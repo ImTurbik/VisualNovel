@@ -39,6 +39,9 @@ private:
     bool running_ = false;
     bool inDialogue_ = false;
     std::string currentPortrait_ = "";
+
+    bool showIntro_ = true;
+    int introStep_ = 0;
     
     int dialogueStep_ = 0;
     int currentDialogueNodeId_ = 0;
