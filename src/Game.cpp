@@ -453,15 +453,15 @@ void Game::buildDialogueDatabase() {
 
     DialogueNode node21; node21.id = 21; node21.npcName = "Принцесса"; 
     node21.text = "Ну конечно, женщины на корабле — к беде? В такие стереотипы верят только сухопутные."; 
-    node21.nextNodeId = -1; dialogueDatabase_.push_back(node21);
+    node21.nextNodeId = 20; dialogueDatabase_.push_back(node21);
 
     DialogueNode node22; node22.id = 22; node22.npcName = "Принцесса"; 
     node22.text = "В море важны только навыки. Раз вас отправили — у вас их тоже хватает."; 
-    node22.nextNodeId = -1; dialogueDatabase_.push_back(node22);
+    node22.nextNodeId = 20; dialogueDatabase_.push_back(node22);
 
     DialogueNode node23; node23.id = 23; node23.npcName = "Принцесса"; 
     node23.text = "На борту есть более интересный собеседник — Барнабас со своими байками."; 
-    node23.nextNodeId = -1; dialogueDatabase_.push_back(node23);
+    node23.nextNodeId = 20; dialogueDatabase_.push_back(node23);
 
     // ДИАЛОГ С БАРНАБАСОМ ГРЕЕМ: ID 30-39
     DialogueNode node30;
